@@ -27,7 +27,10 @@ def process_args
     o.integer '-a', '--angle', 'angle increment of lines for both vanish points  (defalt 30)', default: 30
     o.integer '--angle1', 'angle increment of lines for VP1  (defalt none)', default: nil
     o.integer '--angle2', 'angle increment of lines for VP2  (defalt none)', default: nil
-    o.string '-c', '--colour', 'colour of the graph lines (default DDDDDD)', default: '000000'
+    o.string '-c', '--colour', 'colour of all lines (default DDDDDD)', default: '000000'
+    o.string '--horizon-colour', 'override colour of the horizon line (default none)', default: nil
+    o.string '--vp1-colour', 'override colour of the vanish point 1 lines (default none)', default: nil
+    o.string '--vp2-colour', 'override colour of the vanish point 2 lines (default none)', default: nil
     o.string '-o', '--orientation', 'portrait or landscape, not valid with custom widthxheight page size (default: landscape)', default: 'landscape'
     o.separator ''
     o.separator 'other options:'
@@ -43,7 +46,7 @@ def process_args
   end
 
 
-  [:page_size, :horizon, :vp1, :vp2, :angle, :angle1, :angle2, :colour, :orientation].each do |k|
+  [:page_size, :horizon, :vp1, :vp2, :angle, :angle1, :angle2, :colour, :horizon_colour, :vp1_colour, :vp2_colour, :orientation].each do |k|
     cmdline_config[k] = opts[k] unless opts[k].nil?
   end
 
@@ -263,12 +266,16 @@ end
 
 # Draw perspective lines
 pdf.stroke_color("000000")
+
+pdf.stroke_color($config[:vp1_colour].nil? ? $config[:colour] : $config[:vp1_colour])
 draw_lines(pdf, "VP1", vanishing_point_1, horizon, angle_1, height_pt, width_pt )
+
+pdf.stroke_color($config[:vp2_colour].nil? ? $config[:colour] : $config[:vp2_colour])
 draw_lines(pdf, "VP2", vanishing_point_2, horizon, angle_2, height_pt, width_pt ) unless one_point
 
 # Draw the horizon line
 pdf.stroke do
-  pdf.stroke_color("FF0000")
+  pdf.stroke_color($config[:horizon_colour].nil? ? $config[:colour] : $config[:horizon_colour])
   pdf.move_to(0, horizon)
   pdf.line_to(width_pt, horizon)
 end
