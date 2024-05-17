@@ -22,9 +22,11 @@ def process_args
     o.string '-f', '--file', 'output filename, if not specified the input filename is used with the suffix changed to pdf'
     o.string '-p', '--page-size', 'page size, either a standard size (eg. A4) or <width>x<height> in mm or in (eg. 9inx12in) (default A4)', default: 'A4'
     o.integer '-h', '--horizon', 'how far up is the horizon line... in % of page height (default 50)', default: 50
-    o.integer '-1', '--vp1', 'position of the lefthand vanishing point... in % from center to left edge (can be > 100) (default none)', default: nil
-    o.integer '-2', '--vp2', 'position of the righthand vanishing point... in % from center to right edge (can be > 100) (default none)', default: nil
-    o.integer '-a', '--angle', 'angle increment of lines from each vanishing point (defalt 30)', default: 30
+    o.integer '--vp1', 'position of the lefthand vanishing point... in % from center to left edge (can be > 100) (default none)', default: nil
+    o.integer '--vp2', 'position of the righthand vanishing point... in % from center to right edge (can be > 100) (default none)', default: nil
+    o.integer '-a', '--angle', 'angle increment of lines for both vanish points  (defalt 30)', default: 30
+    o.integer '--angle1', 'angle increment of lines for VP1  (defalt none)', default: nil
+    o.integer '--angle2', 'angle increment of lines for VP2  (defalt none)', default: nil
     o.string '-c', '--colour', 'colour of the graph lines (default DDDDDD)', default: '000000'
     o.string '-o', '--orientation', 'portrait or landscape, not valid with custom widthxheight page size (default: landscape)', default: 'landscape'
     o.separator ''
@@ -41,7 +43,7 @@ def process_args
   end
 
 
-  [:page_size, :horizon, :vp1, :vp2, :angle, :colour, :orientation].each do |k|
+  [:page_size, :horizon, :vp1, :vp2, :angle, :angle1, :angle2, :colour, :orientation].each do |k|
     cmdline_config[k] = opts[k] unless opts[k].nil?
   end
 
@@ -121,7 +123,8 @@ def rad2deg(rad)
   rad / 0.01745
 end
 
-angle = deg2rad($config[:angle])
+angle_1 = deg2rad($config[:angle1].nil? ? $config[:angle] : $config[:angle1])
+angle_2 = deg2rad($config[:angle2].nil? ? $config[:angle] : $config[:angle2])
 horizon = (height_pt * $config[:horizon].to_f) / 100.0
 
 if $verbose
@@ -130,9 +133,9 @@ if $verbose
   puts "Horizon: #{horizon}"
   puts "#{one_point ? 'one' : 'two'} point perspective"
   puts "VP1: #{$config[:vp1]} left of center - #{vanishing_point_1}"
+  puts "VP1 angle: #{$config[:angle1]} deg, #{(deg2rad(360) / angle_1).floor} lines"
   puts "VP2: #{$config[:vp2]} left of center - #{vanishing_point_2}" unless one_point
-  puts "angle: #{$config[:angle]} deg"
-  puts "#{(deg2rad(360) / angle).floor} lines"
+  puts "VP2 angle: #{$config[:angle2]} deg, #{(deg2rad(360) / angle_2).floor} lines"
 end
 
 
@@ -260,8 +263,8 @@ end
 
 # Draw perspective lines
 pdf.stroke_color("000000")
-draw_lines(pdf, "VP1", vanishing_point_1, horizon, angle, height_pt, width_pt )
-draw_lines(pdf, "VP2", vanishing_point_2, horizon, angle, height_pt, width_pt ) unless one_point
+draw_lines(pdf, "VP1", vanishing_point_1, horizon, angle_1, height_pt, width_pt )
+draw_lines(pdf, "VP2", vanishing_point_2, horizon, angle_2, height_pt, width_pt ) unless one_point
 
 # Draw the horizon line
 pdf.stroke do
@@ -288,7 +291,12 @@ pdf.stroke_color("000000")
 pdf.fill_color("000000")
 pdf.font_size(8)
 vp2_label = one_point ? '' : ", VP2: #{$config[:vp2]}% right"
-pdf.text_box("Perspective guide. Horizon: #{$config[:horizon]}%, VP1: #{$config[:vp1]}% left#{vp2_label}, Angle: #{rad2deg(angle).round} deg", at: [10, 7], height: 10, width: width_pt - 20)
+if angle_1 == angle_2
+  angle_label = "Angle: #{rad2deg(angle_1).round} deg"
+else
+  angle_label = "VP1 Angle: #{rad2deg(angle_1).round} deg, VP2 Angle: #{rad2deg(angle_2).round} deg"
+end
+pdf.text_box("Perspective guide. Horizon: #{$config[:horizon]}%, VP1: #{$config[:vp1]}% left#{vp2_label}, #{angle_label}", at: [10, 7], height: 10, width: width_pt - 20)
 
 pdf.bounding_box([width_pt / 2, 7], width: (width_pt / 2) - 10, height: 10) do
   pdf.font('Times-Roman', style: :italic)
@@ -298,7 +306,7 @@ end
 # write the output file
 output_file = if output_filename.nil?
                 vp2_section = one_point ? '' : "-#{$config[:vp2]}"
-                "#{$config[:orientation]}-#{$config[:page_size]}-#{$config[:horizon]}%-#{one_point ? 'one' : 'two'}-point-#{$config[:vp1]}#{vp2_section}-#{rad2deg(angle).round}.pdf"
+                "#{$config[:orientation]}-#{$config[:page_size]}-#{$config[:horizon]}%-#{one_point ? 'one' : 'two'}-point-#{$config[:vp1]}#{vp2_section}-#{rad2deg(angle_1).round}-#{rad2deg(angle_2).round}.pdf"
               else
                 output_filename
               end
