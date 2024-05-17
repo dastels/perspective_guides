@@ -210,7 +210,7 @@ def draw_lines(pdf, vpname, vp, horizon, angle, height_pt, width_pt)
 
   (1...number_of_lines).each do |i|
     line_angle = i * angle
-    puts "Angle: #{rad2deg(line_angle)}"
+    puts "Angle: #{rad2deg(line_angle)}" if $verbose
     case line_angle
     when 0...angle_sums[0]             # 1
       unless off_right
