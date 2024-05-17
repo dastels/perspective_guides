@@ -18,7 +18,7 @@ end
 def process_args
   cmdline_config = {}
 
-  opts = Slop.parse(banner: "usage: #{$0} [options] specification-file") do |o|
+  opts = Slop.parse(banner: "usage: #{$0} [options]") do |o|
     o.string '-f', '--file', 'output filename, if not specified the input filename is used with the suffix changed to pdf'
     o.string '-p', '--page-size', 'page size, either a standard size (eg. A4) or <width>x<height> in mm or in (eg. 9inx12in) (default A4)', default: 'A4'
     o.integer '-h', '--horizon', 'how far up is the horizon line... in % of page height (default 50)', default: 50
